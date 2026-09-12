@@ -5,6 +5,8 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from fastapi import FastAPI
+from log_422 import validation_exception_handler
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from routes import router
 
@@ -15,6 +17,7 @@ logging.basicConfig(
 )
 
 app = FastAPI(title="RakshaCover — Module C (Aftermath)")
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
 
 app.add_middleware(
     CORSMiddleware,

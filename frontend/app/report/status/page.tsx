@@ -3,16 +3,19 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, Clock, ArrowRight, ShieldAlert } from "lucide-react";
-import { submitIntake } from "@/lib/api/aftermath";
-import type { AftermathIntakeResponse } from "@/lib/types";
 
 export default function ReportStatusPage() {
   const router = useRouter();
-  const [data, setData] = useState<AftermathIntakeResponse | null>(null);
+  const [data, setData] = useState<any>(null);
 
   useEffect(() => {
-    submitIntake({}).then(setData).catch(console.error);
-  }, []);
+    const caseDataStr = sessionStorage.getItem("raksha_case");
+    if (caseDataStr) {
+      setData(JSON.parse(caseDataStr));
+    } else {
+      router.push("/report");
+    }
+  }, [router]);
 
   if (!data) return (
     <div className="flex items-center justify-center h-[calc(100vh-64px)] text-[#4b5563]">
@@ -20,7 +23,7 @@ export default function ReportStatusPage() {
     </div>
   );
 
-  const pct = Math.round(data.urgencyScore * 100);
+  const pct = Math.round((data.urgency_score || 0) * 100);
   const urgencyColor = pct > 70 ? "#e63946" : pct > 40 ? "#f59e0b" : "#10b981";
 
   return (
@@ -29,12 +32,12 @@ export default function ReportStatusPage() {
       <h1 className="text-3xl font-black mb-8">Threat Assessment</h1>
 
       {/* Exit-risk alert */}
-      {data.exitRisk && (
+      {data.exit_risk_flag && (
         <div className="mb-6 p-5 rounded-xl border border-[#e63946]/40 bg-[#e63946]/10 flex gap-4 items-start">
           <ShieldAlert className="w-8 h-8 text-[#e63946] shrink-0 mt-0.5" />
           <div>
             <div className="font-bold text-[#e63946] text-lg mb-1">High Exit-Risk Detected</div>
-            <p className="text-[#fca5a5] text-sm">{data.exitRiskReason}</p>
+            <p className="text-[#fca5a5] text-sm">Suspicious VPA/Account detected.</p>
             <p className="text-[#fca5a5] text-sm mt-2 font-semibold">
               Funds may be converted to crypto imminently. Call 1930 NOW.
             </p>
@@ -65,12 +68,12 @@ export default function ReportStatusPage() {
           />
         </div>
         <p className="text-xs text-[#6b7280] text-right mt-2">
-          Recovery probability drops {(data.decayRate * 100).toFixed(0)}% every hour
+          Recovery probability drops 15% every hour
         </p>
       </div>
 
       {/* Fraud type warning */}
-      {!data.exitRisk && (
+      {!data.exit_risk_flag && (
         <div className="flex gap-3 items-center p-4 rounded-xl border border-[#2a2a2a] bg-[#161616] mb-6 text-sm text-[#9ca3af]">
           <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0" />
           Act within the golden hour to maximise fund recovery chances.

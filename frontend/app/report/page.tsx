@@ -39,10 +39,43 @@ export default function ReportPage() {
   const handleNext = async () => {
     if (!fraudType) return;
     setLoading(true);
-    try { 
+    try {
+      const typeMap: Record<string, string> = {
+        "UPI_FRAUD": "upi_card",
+        "JOB_FRAUD": "job_fraud",
+        "SEXTORTION": "sextortion",
+        "DIGITAL_ARREST": "digital_arrest"
+      };
+
+      // Bulletproof timestamp formatting
+      let isoTimestamp;
+      try {
+        const d = form.timestamp ? new Date(form.timestamp) : new Date();
+        isoTimestamp = d.toISOString();
+      } catch (e) {
+        isoTimestamp = new Date().toISOString();
+      }
+
+      const payload = {
+         fraud_type: typeMap[fraudType],
+         incident_timestamp: isoTimestamp,
+         amount_lost: form.amount ? parseFloat(form.amount) : 0,
+         receiving_upi_id: form.receivingVpa || undefined,
+         evidence_fields: {
+             utr: form.utr,
+             platform: form.platform,
+             recruiterContact: form.recruiterContact,
+             platformHandle: form.platformHandle,
+             evidenceLocker: form.evidenceLocker,
+             paymentProof: form.paymentProof
+         }
+      };
+
       // Save form locally for the result page to use
-      sessionStorage.setItem("raksha_intake", JSON.stringify({ fraudType, ...form }));
-      await submitIntake({ fraudType, ...form }); 
+      sessionStorage.setItem("raksha_intake", JSON.stringify(payload));
+      const res = await submitIntake(payload);
+      sessionStorage.setItem("raksha_case", JSON.stringify(res));
+      
       router.push("/report/status"); 
     } catch (e) { 
       console.error(e); 

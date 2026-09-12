@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { FileText, Copy, Download, CheckCircle2 } from "lucide-react";
-import { generateReport } from "@/lib/api/aftermath";
+import { submitReport } from "@/lib/api/aftermath";
 import type { AftermathReportResponse } from "@/lib/types";
 
 export default function ReportResultPage() {
@@ -10,7 +10,16 @@ export default function ReportResultPage() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    generateReport({}).then((res) => {
+    const caseDataStr = sessionStorage.getItem("raksha_case");
+    let caseId = "";
+    if (caseDataStr) {
+      try {
+        const caseData = JSON.parse(caseDataStr);
+        caseId = caseData.case_id || "";
+      } catch (e) {}
+    }
+
+    submitReport({ case_id: caseId }).then((res) => {
       // Dynamic Mock Overwrite for Demo Purposes
       const savedData = sessionStorage.getItem("raksha_intake");
       if (savedData) {

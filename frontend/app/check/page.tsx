@@ -36,11 +36,19 @@ export default function CheckPage() {
     setLoading(false);
   };
 
-  const scanQr = async () => {
-    setLoading(true);
-    try { const r = await checkQr("dummy_base64"); setQrRes(r); }
-    catch (e) { console.error(e); }
-    setLoading(false);
+  const handleQrUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const base64 = (event.target?.result as string).split(',')[1];
+      if (!base64) return;
+      setLoading(true);
+      try { const r = await checkQr(base64); setQrRes(r); }
+      catch (err) { console.error(err); }
+      setLoading(false);
+    };
+    reader.readAsDataURL(file);
   };
 
   const result = linkRes ?? upiRes ?? qrRes;
@@ -94,17 +102,17 @@ export default function CheckPage() {
             </div>
           </div>
         ) : (
-          <div
+          <label
             className="border-2 border-dashed border-[#2a2a2a] rounded-xl p-12 flex flex-col items-center text-center hover:border-[#e63946] transition-colors cursor-pointer"
-            onClick={scanQr}
           >
+            <input type="file" accept="image/png, image/jpeg" className="hidden" onChange={handleQrUpload} disabled={loading} />
             <UploadCloud className="w-10 h-10 text-[#4b5563] mb-3" />
             <p className="text-[#9ca3af] mb-1">Drag & drop or click to upload QR code</p>
             <p className="text-[#4b5563] text-sm mb-4">PNG, JPG, JPEG supported</p>
-            <button disabled={loading} className="btn-ghost text-sm px-5">
+            <div className={`btn-ghost text-sm px-5 ${loading ? "opacity-50" : ""}`}>
               {loading ? "Decoding…" : "Upload & Decode"}
-            </button>
-          </div>
+            </div>
+          </label>
         )}
 
         {result && (

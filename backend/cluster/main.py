@@ -1,6 +1,7 @@
 """FastAPI entrypoint for RakshaCover Module B."""
 
 from fastapi import FastAPI, Query
+from fastapi.middleware.cors import CORSMiddleware
 
 from clustering import ClusterStore, load_seed_reports
 from graph_builder import build_graph
@@ -8,6 +9,14 @@ from models import GraphResponse, MatchRequest, MatchResponse, Report
 
 
 app = FastAPI(title="RakshaCover Cluster Intelligence", version="0.1.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 store = ClusterStore()
 store.seed(load_seed_reports())
 

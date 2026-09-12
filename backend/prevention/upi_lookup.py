@@ -5,47 +5,44 @@ Handles timeouts gracefully to allow the module to degrade if the service is dow
 Part of the algorithm specs (Rule 6).
 """
 import os
-import requests
-
-CLUSTER_SERVICE_URL = os.getenv("CLUSTER_SERVICE_URL", "http://localhost:8002")
+import json
+from pathlib import Path
 
 def check_upi_reputation(vpa: str) -> dict:
     """
-    Calls out to Module B to get report count and cluster confidence.
-    Fails gracefully with verdict "unknown".
+    Checks the cluster seed data for reports matching the VPA.
+    Returns standard Prevention Engine payload (risk_score, verdict, signals).
     """
-    default_response = {
-        "vpa": vpa,
-        "report_count": 0,
-        "cluster_confidence": 0.0,
-        "verdict": "unknown",
-        "note": "Not enough data yet (or service unreachable)"
-    }
+    seed_file = Path(__file__).parent.parent / "cluster" / "data" / "seed_reports.json"
+    report_count = 0
     
-    try:
-        url = f"{CLUSTER_SERVICE_URL}/cluster/graph"
-        response = requests.get(url, params={"vpa": vpa}, timeout=2.0)
-        
-        if response.status_code == 200:
-            data = response.json()
-            report_count = data.get("report_count", 0)
-            confidence = data.get("cluster_confidence", 0.0)
+    if seed_file.exists():
+        try:
+            reports = json.loads(seed_file.read_text(encoding="utf-8"))
+            for r in reports:
+                if r.get("payment_handle") == vpa:
+                    report_count += 1
+        except Exception as e:
+            print(f"Error reading cluster seed: {e}")
             
-            if report_count > 0 or confidence > 0:
-                verdict = "high_risk" if (report_count > 2 or confidence > 50.0) else "low_risk"
-                note = f"Reported {report_count} times, matches cluster with {confidence}% confidence"
-                return {
-                    "vpa": vpa,
-                    "report_count": report_count,
-                    "cluster_confidence": confidence,
-                    "verdict": verdict,
-                    "note": note
-                }
-            return default_response
-        else:
-            return default_response
-            
-    except Exception as e:
-        # Expected to fail if Module B isn't running yet
-        print(f"Warning: Module B unreachable for UPI lookup: {e}")
-        return default_response
+    if report_count >= 2:
+        return {
+            "vpa": vpa,
+            "risk_score": 90,
+            "verdict": "dangerous",
+            "signals": [{"check": "cluster_graph", "flagged": True, "detail": f"Found {report_count} linked fraud reports in cluster"}]
+        }
+    elif report_count == 1:
+        return {
+            "vpa": vpa,
+            "risk_score": 45,
+            "verdict": "suspicious",
+            "signals": [{"check": "cluster_graph", "flagged": True, "detail": "Found 1 prior fraud report in cluster"}]
+        }
+    else:
+        return {
+            "vpa": vpa,
+            "risk_score": 5,
+            "verdict": "safe",
+            "signals": [{"check": "cluster_graph", "flagged": False, "detail": "No prior fraud reports found"}]
+        }

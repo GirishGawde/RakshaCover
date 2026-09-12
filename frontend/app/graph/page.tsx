@@ -55,13 +55,13 @@ export default function GraphPage() {
                 <Network className="w-4 h-4 md:w-5 md:h-5 text-[#e63946]" />
               </div>
               <div className="min-w-0">
-                <div className="text-[9px] md:text-[10px] uppercase tracking-widest text-[#e63946] font-bold mb-0.5">Active Cluster</div>
-                <h2 className="font-bold text-white text-sm md:text-base leading-tight truncate">{graphData.clusterLabel}</h2>
+                <div className="text-[9px] md:text-[10px] uppercase tracking-widest text-[#e63946] font-bold mb-0.5">Global Network</div>
+                <h2 className="font-bold text-white text-sm md:text-base leading-tight truncate">Intelligence Graph</h2>
               </div>
             </div>
             <div className="flex justify-between items-center mt-2 pt-2 md:mt-4 md:pt-4 border-t border-[#2a2a2a]/50 text-[10px] md:text-xs text-[#9ca3af]">
-              <span>ID: {graphData.clusterId}</span>
-              <span className="font-mono text-white">{graphData.reportCount} Nodes</span>
+              <span>Nodes: {graphData.nodes?.length || 0}</span>
+              <span className="font-mono text-white">{graphData.edges?.length || 0} Edges</span>
             </div>
           </div>
 

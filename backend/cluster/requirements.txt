@@ -1,0 +1,6 @@
+fastapi>=0.110,<1
+networkx>=3.2,<4
+numpy>=1.26,<3
+pydantic>=2.6,<3
+scikit-learn>=1.4,<2
+uvicorn[standard]>=0.29,<1

@@ -5,8 +5,8 @@ from itertools import count
 import json
 from pathlib import Path
 
-from feature_extraction import report_similarity
-from models import Report
+from cluster.feature_extraction import report_similarity
+from cluster.models import Report
 
 
 DEFAULT_SIMILARITY_THRESHOLD = 0.42

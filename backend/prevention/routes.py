@@ -7,18 +7,18 @@ from typing import Optional
 from fastapi import APIRouter
 from pydantic import BaseModel
 
-from domain_check import check_domain
-from whois_ssl_check import check_domain_age, check_ssl
-from threat_feed import check_threat_feed
-from classifier import check_classifier
-from qr_check import decode_qr_image, parse_qr_data, validate_vpa
-from upi_lookup import check_upi_reputation
+from prevention.domain_check import check_domain
+from prevention.whois_ssl_check import check_domain_age, check_ssl
+from prevention.threat_feed import check_threat_feed
+from prevention.classifier import check_classifier
+from prevention.qr_check import decode_qr_image, parse_qr_data, validate_vpa
+from prevention.upi_lookup import check_upi_reputation
 import sys
 from pathlib import Path
 
 # Add hooks directory to path for the guardian hook
 sys.path.append(str(Path(__file__).resolve().parent))
-from hooks.guardian_hook import trigger_guardian_alert
+from prevention.hooks.guardian_hook import trigger_guardian_alert
 
 router = APIRouter()
 

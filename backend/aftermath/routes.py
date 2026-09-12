@@ -20,17 +20,17 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import Response
 from pydantic import BaseModel, field_validator
 
-from classifier import FraudType, classify_and_validate
-from digital_arrest_shield import check_digital_arrest
-from exit_risk import check_exit_risk
-from report_generator import generate_pdf_bytes, generate_report
-from urgency_score import compute_urgency
+from aftermath.classifier import FraudType, classify_and_validate
+from aftermath.digital_arrest_shield import check_digital_arrest
+from aftermath.exit_risk import check_exit_risk
+from aftermath.report_generator import generate_pdf_bytes, generate_report
+from aftermath.urgency_score import compute_urgency
 from shared.db import get_supabase
 import sys
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parent))
-from hooks.guardian_hook import trigger_guardian_alert
+from aftermath.hooks.guardian_hook import trigger_guardian_alert
 
 logger = logging.getLogger("aftermath")
 router = APIRouter()

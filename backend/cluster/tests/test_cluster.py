@@ -1,8 +1,8 @@
 import unittest
 
-from clustering import ClusterStore
-from graph_builder import build_graph
-from models import Report
+from cluster.clustering import ClusterStore
+from cluster.graph_builder import build_graph
+from cluster.models import Report
 
 
 class ClusterTests(unittest.TestCase):

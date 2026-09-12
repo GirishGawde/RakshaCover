@@ -47,7 +47,7 @@ export default function GuardianLinkPage() {
       // Start listening for link acceptance (Fallback to reliable HTTP polling for demo)
       const interval = setInterval(async () => {
         try {
-          const statusRes = await fetch(`${process.env.NEXT_PUBLIC_MODULE_GUARDIAN_URL || 'http://localhost:8004'}/guardian/status?linkId=${res.linkId}`);
+          const statusRes = await fetch(`${process.env.NEXT_PUBLIC_MODULE_GUARDIAN_URL || 'http://localhost:8000'}/guardian/status?linkId=${res.linkId}`);
           if (statusRes.ok) {
             const data = await statusRes.json();
             if (data.status === "active") {

@@ -2,8 +2,8 @@
 
 import networkx as nx
 
-from clustering import Cluster
-from models import GraphEdge, GraphNode, GraphResponse
+from cluster.clustering import Cluster
+from cluster.models import GraphEdge, GraphNode, GraphResponse
 
 
 DEFAULT_EDGE_THRESHOLD = 0.28

@@ -300,6 +300,6 @@ cd backend/aftermath && pip install -r requirements.txt && uvicorn main:app --re
 | Service | URL |
 |---------|-----|
 | Frontend | http://localhost:3000 |
-| Module A — Prevention | http://localhost:8001 |
-| Module B — Cluster | http://localhost:8002 |
-| Module C — Aftermath | http://localhost:8003 |
+| Module A — Prevention | http://localhost:8000 |
+| Module B — Cluster | http://localhost:8000 |
+| Module C — Aftermath | http://localhost:8000 |

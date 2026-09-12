@@ -1,8 +1,8 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
-from models import LinkRequest, AlertRequest, LinkStatusResponse, AlertResponse
-from linking import create_or_update_link, get_link_status, accept_link
-from alert_dispatcher import dispatch_alert
+from guardian.models import LinkRequest, AlertRequest, LinkStatusResponse, AlertResponse
+from guardian.linking import create_or_update_link, get_link_status, accept_link
+from guardian.alert_dispatcher import dispatch_alert
 import uuid
 
 router = APIRouter(prefix="/guardian", tags=["Guardian"])

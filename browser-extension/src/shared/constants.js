@@ -1,5 +1,5 @@
 export const DEFAULT_SETTINGS = {
-  apiBaseUrl: "http://localhost:8001",
+  apiBaseUrl: "http://localhost:8000",
   automaticScans: true,
   showPageWarnings: true,
 };

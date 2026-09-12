@@ -1,0 +1,15 @@
+fastapi>=0.111.0
+uvicorn[standard]>=0.29.0
+pydantic[email]>=2.7.0
+supabase>=2.4.0
+python-dotenv>=1.0.1
+networkx>=3.2,<4
+numpy>=1.26,<3
+scikit-learn>=1.4
+pandas>=2.2.1
+pyzbar>=0.1.9
+rapidfuzz>=3.6.2
+python-whois>=0.8.0
+requests>=2.31.0
+python-multipart>=0.0.9
+Pillow>=10.2.0

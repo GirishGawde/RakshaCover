@@ -6,7 +6,7 @@ from collections.abc import Iterable
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-from models import Report
+from cluster.models import Report
 
 
 _TOKEN_RE = re.compile(r"[a-z0-9@._-]+")

@@ -10,7 +10,7 @@
   ],
   "host_permissions": [
     "<all_urls>",
-    "http://localhost:8001/*"
+    "http://localhost:8000/*"
   ],
   "background": {
     "service_worker": "src/background/service-worker.js",

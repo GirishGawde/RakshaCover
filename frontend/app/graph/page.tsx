@@ -34,7 +34,7 @@ export default function GraphPage() {
       <div className={`flex items-center gap-2 px-6 py-2.5 text-xs font-semibold tracking-wide border-b border-[#2a2a2a] ${isConnected ? "bg-[#e63946]/10 text-[#e63946]" : "bg-[#161616] text-[#6b7280]"}`}>
         {isConnected
           ? <><Wifi className="w-4 h-4" /> REALTIME SYNC ACTIVE — Monitoring Supabase stream</>
-          : <><WifiOff className="w-4 h-4" /> OFFLINE MODE — Configure Supabase keys for live updates</>
+          : <><WifiOff className="w-4 h-4" /> OFFLINE MODE — {process.env.NEXT_PUBLIC_SUPABASE_URL ? "Keys loaded, but connection failed (Check Realtime/RLS in Supabase, or browser console)" : "Keys not found in Next.js environment"}</>
         }
         {latestEvent && (
           <span className="ml-auto flex items-center gap-2 bg-[#e63946]/20 text-[#e63946] px-3 py-1 rounded border border-[#e63946]/30 animate-pulse">

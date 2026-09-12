@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>RakshaCover</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <main>
+      <header><span class="eyebrow">RAKSHACOVER</span><h1>Link Shield</h1></header>
+      <p id="url" class="url">Checking current page...</p>
+      <section id="state" class="state">Loading scan...</section>
+      <button id="scan" class="primary" type="button">Check this page</button>
+      <p id="error" class="error" hidden></p>
+      <section id="details" hidden>
+        <h2>Why this result?</h2>
+        <ul id="signals"></ul>
+        <p id="local-signals" class="local-signals"></p>
+      </section>
+      <footer>RakshaCover never reads what you type into forms.</footer>
+    </main>
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

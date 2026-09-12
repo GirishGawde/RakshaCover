@@ -3,34 +3,35 @@
 # Route handlers for Module C (Aftermath & Recovery).
 #
 # Endpoints:
-#   POST /aftermath/intake  — intake form, urgency scoring, alert flags
-#   POST /aftermath/report  — generate formatted complaint report
-#   GET  /aftermath/report/download/{case_id}  — PDF download (optional, after CP2)
+#   POST /aftermath/intake               — intake form, urgency scoring, alert flags
+#   POST /aftermath/report               — generate formatted complaint report
+#   GET  /aftermath/report/download/{id} — PDF download (optional)
 #
-# BB1 (Build Block 1): uses _case_store (in-memory dict) for fast iteration.
-# BB2 (Build Block 2): swap _case_store for Supabase INSERT/SELECT — see Step 2.4.
+# Storage strategy:
+#   Primary  — Supabase (INSERT / SELECT)
+#   Fallback — _case_store (in-memory) if Supabase is unavailable
+
+import logging
+import uuid
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import Response
 from pydantic import BaseModel, field_validator
-from typing import Optional, List, Dict, Any
-from datetime import datetime
-import uuid
 
 from classifier import FraudType, classify_and_validate
-from urgency_score import compute_urgency
 from digital_arrest_shield import check_digital_arrest
 from exit_risk import check_exit_risk
-from report_generator import generate_report, generate_pdf_bytes
+from report_generator import generate_pdf_bytes, generate_report
+from urgency_score import compute_urgency
 from db import get_supabase
 
+logger = logging.getLogger("aftermath")
 router = APIRouter()
 
-# BB1: in-memory store — replace with Supabase in BB2
+# In-memory fallback store — used when Supabase is unavailable
 _case_store: Dict[str, dict] = {}
-
-# BB2 demo fallback: if Supabase is flaky during the demo, swap back to _case_store
-DEMO_CASE: Optional[dict] = None  # set a hardcoded dict here as last resort
 
 
 # ---------------------------------------------------------------------------
@@ -104,7 +105,8 @@ class ReportResponse(BaseModel):
 @router.post("/aftermath/intake", response_model=IntakeResponse)
 def aftermath_intake(payload: IntakeRequest):
     # 1. Validate fraud-type evidence fields.
-    #    Fix 4: use _validated_evidence (Pydantic-scrubbed) — NOT raw payload.evidence_fields.
+    #    Fix 4: _validated_evidence is Pydantic-scrubbed — unknown keys are stripped.
+    #    Never use raw payload.evidence_fields for DB inserts.
     try:
         _validated_evidence, next_steps = classify_and_validate(
             payload.fraud_type, payload.evidence_fields
@@ -113,49 +115,57 @@ def aftermath_intake(payload: IntakeRequest):
         raise HTTPException(status_code=422, detail=f"Evidence validation error: {e}")
 
     # 2. Compute urgency score.
-    #    Fix 3: field_validator above guarantees tzinfo is set; compute_urgency also
-    #    raises ValueError on naive timestamps as a second line of defence.
-    urgency = compute_urgency(payload.incident_timestamp)
+    #    BB3 edge case: future timestamps are clamped to t=0 (score=1.0, CRITICAL)
+    #    so a victim who mis-enters a future time still gets the most urgent routing.
+    #    Fix 3: the field_validator above already blocked naive timestamps with 422.
+    ts = payload.incident_timestamp
+    now_utc = datetime.now(timezone.utc)
+    if ts > now_utc:
+        logger.warning(
+            "incident_timestamp is in the future (%.1f min ahead) — clamping to now",
+            (ts - now_utc).total_seconds() / 60,
+        )
+        ts = now_utc
+    urgency = compute_urgency(ts)
 
     # 3. Digital Arrest Shield check.
     da_result = check_digital_arrest(payload.digital_arrest_signals)
 
-    # 4. Exit-risk flag (Fix 2: both UPI ID and account are checked independently).
+    # 4. Exit-risk flag.
+    #    Fix 2: both UPI ID and account are evaluated independently.
     exit_risk = check_exit_risk(
         upi_id=payload.receiving_upi_id,
         account=payload.receiving_account,
     )
 
-    # 5. Persist case.
-    #    BB1: in-memory store.
-    #    BB2: replace with Supabase INSERT (see Step 2.4 in modc.md).
+    # 5. Persist case — Supabase primary, _case_store fallback.
     case_id = str(uuid.uuid4())
-    
-    # We create the case dictionary for both Supabase and our in-memory fallback
     case_data = {
-        "id": case_id,
-        "fraud_type": payload.fraud_type.value,
-        "victim_name": payload.victim_name,
-        "victim_contact": payload.victim_contact,
-        "incident_ts": payload.incident_timestamp.isoformat(),
-        "amount_lost": payload.amount_lost,
-        "currency": payload.currency,
+        "id":               case_id,
+        "fraud_type":       payload.fraud_type.value,
+        "victim_name":      payload.victim_name,
+        "victim_contact":   payload.victim_contact,
+        "incident_ts":      payload.incident_timestamp.isoformat(),
+        "amount_lost":      payload.amount_lost,
+        "currency":         payload.currency,
         "receiving_upi_id": payload.receiving_upi_id,
-        "receiving_account": payload.receiving_account,
-        "evidence_text": payload.evidence_text,
-        "evidence_fields": _validated_evidence.dict(exclude_none=True),
-        "urgency_score": urgency["urgency_score"],
-        "urgency_label": urgency["urgency_label"],
-        "next_steps": next_steps,
-        "exit_risk_flag": exit_risk["flagged"],
-        "da_alert": da_result["digital_arrest_alert"],
+        "receiving_account":payload.receiving_account,
+        "evidence_text":    payload.evidence_text,
+        "evidence_fields":  _validated_evidence.dict(exclude_none=True),
+        "urgency_score":    urgency["urgency_score"],
+        "urgency_label":    urgency["urgency_label"],
+        "next_steps":       next_steps,
+        "exit_risk_flag":   exit_risk["flagged"],
+        "da_alert":         da_result["digital_arrest_alert"],
     }
-    
+
+    db_ok = False
     try:
         get_supabase().table("reports").insert(case_data).execute()
+        db_ok = True
     except Exception as e:
-        print(f"Supabase INSERT failed, falling back to memory: {e}")
-        # Save exact shape required by report_generator as a fallback
+        logger.error("Supabase INSERT failed for case_id=%s: %s", case_id, e)
+        # Fall back to memory so the session still works
         _case_store[case_id] = {
             **payload.dict(),
             "urgency_score":   urgency["urgency_score"],
@@ -164,6 +174,16 @@ def aftermath_intake(payload: IntakeRequest):
             "next_steps":      next_steps,
             "evidence_fields": _validated_evidence.dict(exclude_none=True),
         }
+
+    logger.info(
+        "Intake: case_id=%s fraud=%s urgency=%s exit_risk=%s da_alert=%s db=%s",
+        case_id,
+        payload.fraud_type.value,
+        urgency["urgency_label"],
+        exit_risk["flagged"],
+        da_result["digital_arrest_alert"],
+        "supabase" if db_ok else "memory",
+    )
 
     return IntakeResponse(
         case_id=case_id,
@@ -184,33 +204,7 @@ def aftermath_intake(payload: IntakeRequest):
 
 @router.post("/aftermath/report", response_model=ReportResponse)
 def aftermath_report(payload: ReportRequest):
-    # BB1 path: in-memory store.
-    # BB2 path: replace with Supabase SELECT (see Step 2.4 in modc.md).
-    case = None
-    try:
-        res = get_supabase().table("reports").select("*").eq("id", payload.case_id).single().execute()
-        db_case = res.data
-        
-        case = {
-            "fraud_type": db_case["fraud_type"],
-            "victim_name": db_case["victim_name"],
-            "victim_contact": db_case["victim_contact"],
-            "incident_timestamp": datetime.fromisoformat(db_case["incident_ts"]),
-            "amount_lost": db_case["amount_lost"],
-            "currency": db_case["currency"],
-            "receiving_upi_id": db_case["receiving_upi_id"],
-            "receiving_account": db_case["receiving_account"],
-            "evidence_text": db_case["evidence_text"],
-            "evidence_fields": db_case["evidence_fields"],
-            "urgency_score": db_case["urgency_score"],
-            "urgency_label": db_case["urgency_label"],
-            "exit_risk_flag": db_case["exit_risk_flag"],
-            "next_steps": db_case["next_steps"]
-        }
-    except Exception as e:
-        print(f"Supabase SELECT failed, falling back to memory: {e}")
-        case = _case_store.get(payload.case_id)
-        
+    case = _load_case(payload.case_id)
     if not case:
         raise HTTPException(
             status_code=404,
@@ -225,45 +219,117 @@ def aftermath_report(payload: ReportRequest):
         victim_name=case["victim_name"],
         victim_contact=case["victim_contact"],
         incident_timestamp=case["incident_timestamp"],
-        amount_lost=case["amount_lost"],
+        amount_lost=case["amount_lost"] or 0.0,
         currency=case["currency"],
-        # Fix 2: prefer UPI ID, fall back to bank account — both are always stored
+        # Fix 2: prefer UPI ID, fall back to bank account
         receiving_id=case.get("receiving_upi_id") or case.get("receiving_account"),
         evidence_text=case["evidence_text"],
-        evidence_fields=case["evidence_fields"],
+        evidence_fields=case["evidence_fields"] or {},
         urgency_score=case["urgency_score"],
-        # Fix 1: read from store — no recalculation from stale timestamp
+        # Fix 1: read from store — never recalculate from stale timestamp
         urgency_label=case["urgency_label"],
         exit_risk_flag=case["exit_risk_flag"],
         cluster_context=cluster_ctx,
-        next_steps=case["next_steps"],
+        next_steps=case["next_steps"] or [],
     )
+
+    logger.info("Report generated: case_id=%s format=%s", payload.case_id, report["report_format"])
 
     return ReportResponse(
         case_id=report["case_id"],
         report_format=report["report_format"],
         report_html=report["report_html"],
         report_text=report["report_text"],
-        download_url=f"/aftermath/report/download/{payload.case_id}" if False else None,
-        # Set download_url to the path above only after PDF generation is implemented.
+        download_url=f"/aftermath/report/download/{payload.case_id}",
     )
 
 
 # ---------------------------------------------------------------------------
-# GET /aftermath/report/download/{case_id}  — Optional PDF (after Checkpoint 2)
+# Shared helper — load a case from Supabase with _case_store fallback
+# ---------------------------------------------------------------------------
+
+def _load_case(case_id: str) -> Optional[dict]:
+    """Returns a normalised case dict or None. Tries Supabase first, falls back to memory."""
+    try:
+        res = (
+            get_supabase()
+            .table("reports")
+            .select(
+                "fraud_type, victim_name, victim_contact, incident_ts, "
+                "amount_lost, currency, receiving_upi_id, receiving_account, "
+                "evidence_text, evidence_fields, urgency_score, urgency_label, "
+                "next_steps, exit_risk_flag"
+            )
+            .eq("id", case_id)
+            .single()
+            .execute()
+        )
+        row = res.data
+        if row:
+            return {
+                "fraud_type":         row["fraud_type"],
+                "victim_name":        row["victim_name"],
+                "victim_contact":     row["victim_contact"],
+                "incident_timestamp": datetime.fromisoformat(row["incident_ts"]),
+                "amount_lost":        float(row["amount_lost"] or 0),
+                "currency":           row["currency"],
+                "receiving_upi_id":   row["receiving_upi_id"],
+                "receiving_account":  row["receiving_account"],
+                "evidence_text":      row["evidence_text"],
+                "evidence_fields":    row["evidence_fields"] or {},
+                "urgency_score":      row["urgency_score"],
+                "urgency_label":      row["urgency_label"],
+                "exit_risk_flag":     row["exit_risk_flag"],
+                "next_steps":         row["next_steps"] or [],
+            }
+    except Exception as e:
+        logger.warning("Supabase SELECT failed for case_id=%s, trying memory: %s", case_id, e)
+
+    return _case_store.get(case_id)
+
+
+# ---------------------------------------------------------------------------
+# GET /aftermath/report/download/{case_id}  — PDF download
 # ---------------------------------------------------------------------------
 
 @router.get("/aftermath/report/download/{case_id}")
 def download_report_pdf(case_id: str):
     """
-    Optional PDF download. Only implement after Checkpoint 2 and if time permits.
-    Prerequisite: pip install weasyprint (+ system libpango deps).
+    Returns a PDF of the complaint report.
+    Requires: pip install weasyprint + system libpango deps.
     """
-    case = _case_store.get(case_id)
+    case = _load_case(case_id)
     if not case:
         raise HTTPException(status_code=404, detail="Case not found.")
-    report = generate_report(case_id=case_id, **case)
-    pdf_bytes = generate_pdf_bytes(report["report_html"])
+
+    try:
+        report = generate_report(
+            case_id=case_id,
+            fraud_type=case["fraud_type"],
+            victim_name=case["victim_name"],
+            victim_contact=case["victim_contact"],
+            incident_timestamp=case["incident_timestamp"],
+            amount_lost=case["amount_lost"] or 0.0,
+            currency=case["currency"],
+            receiving_id=case.get("receiving_upi_id") or case.get("receiving_account"),
+            evidence_text=case["evidence_text"],
+            evidence_fields=case["evidence_fields"] or {},
+            urgency_score=case["urgency_score"],
+            urgency_label=case["urgency_label"],
+            exit_risk_flag=case["exit_risk_flag"],
+            next_steps=case["next_steps"] or [],
+        )
+        pdf_bytes = generate_pdf_bytes(report["report_html"])
+    except ImportError:
+        raise HTTPException(
+            status_code=501,
+            detail="PDF generation not available. Install weasyprint to enable.",
+        )
+    except Exception as e:
+        logger.error("PDF generation failed for case_id=%s: %s", case_id, e)
+        raise HTTPException(status_code=500, detail="PDF generation failed.")
+
+    logger.info("PDF downloaded: case_id=%s", case_id)
     return Response(
         content=pdf_bytes,
         media_type="application/pdf",

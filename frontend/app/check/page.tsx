@@ -115,9 +115,30 @@ export default function CheckPage() {
           </label>
         )}
 
-        {result && (
-          <RiskBanner label={result.riskLabel} recommendation={result.recommendation} flags={(result as any).flags} />
-        )}
+        {result && (() => {
+          let mappedLabel: import("@/lib/types").RiskLabel = "SUSPICIOUS";
+          let mappedRec = "";
+          let mappedFlags: any = undefined;
+
+          if ("url" in result || "decoded_type" in result) {
+            const r = result as CheckLinkResponse | CheckQrResponse;
+            mappedLabel = r.verdict === "safe" ? "SAFE" : r.verdict === "dangerous" ? "SEVERE_THREAT" : "SUSPICIOUS";
+            mappedRec = r.verdict === "safe" ? "No immediate threats detected." : "Caution advised. Signals flagged this as potentially unsafe.";
+            mappedFlags = {};
+            r.signals?.forEach(s => {
+               if (s.check === "levenshtein_domain_check" && s.flagged) mappedFlags.levenshteinLookalike = true;
+               if (s.check === "whois_ssl_check" && s.flagged) mappedFlags.domainAgeDays = 5; // dummy
+               if (s.check === "threat_feed" && s.flagged) mappedFlags.phishTankHit = true;
+            });
+          } else if ("vpa" in result) {
+            const upiRes = result as CheckUpiResponse;
+            mappedLabel = upiRes.verdict === "low_risk" ? "SAFE" : upiRes.verdict === "high_risk" ? "SEVERE_THREAT" : "SUSPICIOUS";
+            mappedRec = upiRes.note || "Proceed with caution.";
+            mappedFlags = { vpaInReportsTable: upiRes.report_count > 0, linkedClusters: upiRes.cluster_confidence > 0 ? 1 : 0 };
+          }
+
+          return <RiskBanner label={mappedLabel} recommendation={mappedRec} flags={mappedFlags} />;
+        })()}
       </div>
     </div>
   );

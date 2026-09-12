@@ -13,6 +13,7 @@ from threat_feed import check_threat_feed
 from classifier import check_classifier
 from qr_check import decode_qr_image, parse_qr_data, validate_vpa
 from upi_lookup import check_upi_reputation
+from safe_browsing import check_safe_browsing
 
 router = APIRouter()
 
@@ -30,6 +31,9 @@ def aggregate_link_score(url: str):
     signals = []
     
     # Run checks
+    sb_res = check_safe_browsing(url)
+    signals.append({"check": "safe_browsing", "flagged": sb_res["flagged"], "detail": sb_res["detail"]})
+    
     tf_res = check_threat_feed(url)
     signals.append({"check": "threat_feed", "flagged": tf_res["flagged"], "detail": tf_res["detail"]})
     
@@ -46,18 +50,19 @@ def aggregate_link_score(url: str):
     signals.append({"check": "ml_classifier", "flagged": ml_res["flagged"], "detail": ml_res["detail"]})
     
     # Calculate score
-    # weights: threat_feed=40, domain_lookalike=25, ml_classifier=20, domain_age=10, ssl_cert=5
+    # weights: safe_browsing=25, threat_feed=25, domain_lookalike=20, ml_classifier=15, domain_age=10, ssl_cert=5
     total_score = 0
-    total_score += (tf_res["score"] / 100.0) * 40
-    total_score += (dl_res["score"] / 100.0) * 25
-    total_score += (ml_res["score"] / 100.0) * 20
+    total_score += (sb_res["score"] / 100.0) * 25
+    total_score += (tf_res["score"] / 100.0) * 25
+    total_score += (dl_res["score"] / 100.0) * 20
+    total_score += (ml_res["score"] / 100.0) * 15
     total_score += (da_res["score"] / 100.0) * 10
     total_score += (ssl_res["score"] / 100.0) * 5
     
     risk_score = min(100, int(total_score))
     
     # Verdict logic
-    if tf_res["flagged"]:  # Any single dangerous signal (threat feed hit)
+    if tf_res["flagged"] or sb_res["flagged"]:  # Any single dangerous signal (threat feed hit)
         verdict = "dangerous"
     elif risk_score >= 50:
         verdict = "dangerous"

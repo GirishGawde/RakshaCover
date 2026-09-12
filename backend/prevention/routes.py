@@ -13,18 +13,27 @@ from threat_feed import check_threat_feed
 from classifier import check_classifier
 from qr_check import decode_qr_image, parse_qr_data, validate_vpa
 from upi_lookup import check_upi_reputation
+import sys
+from pathlib import Path
+
+# Add hooks directory to path for the guardian hook
+sys.path.append(str(Path(__file__).resolve().parent))
+from hooks.guardian_hook import trigger_guardian_alert
 
 router = APIRouter()
 
 class LinkCheckRequest(BaseModel):
     url: str
+    userId: Optional[str] = "demo_parent_user"
 
 class QRCheckRequest(BaseModel):
     qr_raw_data: Optional[str] = None
     qr_image_base64: Optional[str] = None
+    userId: Optional[str] = "demo_parent_user"
 
 class UPICheckRequest(BaseModel):
     vpa: str
+    userId: Optional[str] = "demo_parent_user"
 
 def aggregate_link_score(url: str):
     signals = []
@@ -71,6 +80,10 @@ def aggregate_link_score(url: str):
 @router.post("/check/link")
 def check_link(req: LinkCheckRequest):
     risk_score, verdict, signals = aggregate_link_score(req.url)
+    
+    if risk_score >= 50:
+        trigger_guardian_alert(req.userId, "malicious_link", risk_score)
+        
     return {
         "url": req.url,
         "risk_score": risk_score,
@@ -90,6 +103,10 @@ def check_qr(req: QRCheckRequest):
     
     if parsed["type"] == "url":
         risk_score, verdict, signals = aggregate_link_score(parsed["url"])
+        
+        if risk_score >= 50:
+            trigger_guardian_alert(req.userId, "malicious_qr", risk_score)
+            
         return {
             "decoded_type": "url",
             "vpa": None,
@@ -102,6 +119,9 @@ def check_qr(req: QRCheckRequest):
         risk_score = vpa_res["score"]
         verdict = "suspicious" if vpa_res["flagged"] else "safe"
         
+        if vpa_res["flagged"]:
+            trigger_guardian_alert(req.userId, "suspicious_upi", risk_score)
+            
         return {
             "decoded_type": "upi",
             "vpa": parsed["vpa"],

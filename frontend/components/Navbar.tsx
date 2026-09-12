@@ -8,6 +8,7 @@ const navLinks = [
   { href: "/check",  label: "Prevention" },
   { href: "/report", label: "Report" },
   { href: "/graph",  label: "Cluster Graph" },
+  { href: "/family", label: "Family Guardian" },
 ];
 
 export function Navbar() {

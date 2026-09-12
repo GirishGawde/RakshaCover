@@ -17,7 +17,11 @@ export default function LoginPage() {
 
     // Fake 500ms network request
     setTimeout(() => {
-      sessionStorage.setItem("raksha_user", JSON.stringify({ name: "Demo User", role: "citizen" }));
+      sessionStorage.setItem("raksha_user", JSON.stringify({ 
+        name: "Demo User", 
+        email: email.toLowerCase().trim() || "demo@example.com",
+        role: "citizen" 
+      }));
       router.push("/");
     }, 500);
   };
@@ -128,11 +132,12 @@ export default function LoginPage() {
               <span className="text-sm font-medium text-[#e63946] cursor-pointer hover:underline">
                 Forgot password?
               </span>
+              <span className="text-xs text-[#6b7280]">Any password works for demo</span>
             </div>
 
             <button
               type="submit"
-              disabled={loading || !email || !password}
+              disabled={loading || !email}
               className="w-full py-4 mt-4 rounded-xl font-bold text-white bg-gradient-to-r from-[#e63946] to-[#b91c1c] hover:opacity-90 transition-opacity flex items-center justify-center gap-2 shadow-[0_10px_20px_rgba(230,57,70,0.3)]"
             >
               {loading ? (

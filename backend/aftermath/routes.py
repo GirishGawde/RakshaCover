@@ -26,6 +26,11 @@ from exit_risk import check_exit_risk
 from report_generator import generate_pdf_bytes, generate_report
 from urgency_score import compute_urgency
 from shared.db import get_supabase
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parent))
+from hooks.guardian_hook import trigger_guardian_alert
 
 logger = logging.getLogger("aftermath")
 router = APIRouter()
@@ -40,6 +45,7 @@ _case_store: Dict[str, dict] = {}
 
 class IntakeRequest(BaseModel):
     fraud_type: FraudType
+    userId: Optional[str] = "demo_parent_user"
     victim_name: Optional[str] = None
     victim_contact: Optional[str] = None
     incident_timestamp: datetime
@@ -130,6 +136,10 @@ def aftermath_intake(payload: IntakeRequest):
 
     # 3. Digital Arrest Shield check.
     da_result = check_digital_arrest(payload.digital_arrest_signals)
+    
+    # TRIGGER GUARDIAN
+    if da_result["digital_arrest_alert"]:
+        trigger_guardian_alert(payload.userId, "digital_arrest", 100.0)
 
     # 4. Exit-risk flag.
     #    Fix 2: both UPI ID and account are evaluated independently.

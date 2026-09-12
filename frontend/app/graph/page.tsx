@@ -44,29 +44,29 @@ export default function GraphPage() {
         )}
       </div>
 
-      <div className="flex flex-1 overflow-hidden relative">
+      <div className="flex flex-col md:flex-row flex-1 overflow-hidden relative">
         {/* Graph Canvas */}
         <div className="flex-1 relative bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#161616] via-[#0a0a0a] to-[#050505]">
           
           {/* Cluster info overlay */}
-          <div className="absolute top-6 left-6 z-10 bg-[#161616]/80 backdrop-blur-md p-4 rounded-xl border border-[#2a2a2a] shadow-2xl max-w-sm pointer-events-none">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-lg bg-[#e63946]/10 flex items-center justify-center border border-[#e63946]/20">
-                <Network className="w-5 h-5 text-[#e63946]" />
+          <div className="absolute top-4 left-4 md:top-6 md:left-6 z-10 bg-[#161616]/80 backdrop-blur-md p-3 md:p-4 rounded-xl border border-[#2a2a2a] shadow-2xl max-w-[220px] md:max-w-sm pointer-events-none">
+            <div className="flex items-center gap-2 md:gap-3 mb-1 md:mb-2">
+              <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-[#e63946]/10 flex items-center justify-center border border-[#e63946]/20 shrink-0">
+                <Network className="w-4 h-4 md:w-5 md:h-5 text-[#e63946]" />
               </div>
-              <div>
-                <div className="text-[10px] uppercase tracking-widest text-[#e63946] font-bold mb-0.5">Active Cluster</div>
-                <h2 className="font-bold text-white leading-tight">{graphData.clusterLabel}</h2>
+              <div className="min-w-0">
+                <div className="text-[9px] md:text-[10px] uppercase tracking-widest text-[#e63946] font-bold mb-0.5">Active Cluster</div>
+                <h2 className="font-bold text-white text-sm md:text-base leading-tight truncate">{graphData.clusterLabel}</h2>
               </div>
             </div>
-            <div className="flex justify-between items-center mt-4 pt-4 border-t border-[#2a2a2a]/50 text-xs text-[#9ca3af]">
+            <div className="flex justify-between items-center mt-2 pt-2 md:mt-4 md:pt-4 border-t border-[#2a2a2a]/50 text-[10px] md:text-xs text-[#9ca3af]">
               <span>ID: {graphData.clusterId}</span>
               <span className="font-mono text-white">{graphData.reportCount} Nodes</span>
             </div>
           </div>
 
           {/* Legend */}
-          <div className="absolute bottom-6 left-6 z-10 bg-[#161616]/80 backdrop-blur-md p-4 rounded-xl border border-[#2a2a2a] text-xs space-y-3 pointer-events-none shadow-2xl">
+          <div className="hidden md:block absolute bottom-6 left-6 z-10 bg-[#161616]/80 backdrop-blur-md p-4 rounded-xl border border-[#2a2a2a] text-xs space-y-3 pointer-events-none shadow-2xl">
             <div className="text-[10px] uppercase tracking-widest text-[#6b7280] font-bold mb-1">Entity Types</div>
             <div className="flex items-center gap-3 text-[#d1d5db]">
               <span className="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]" /> 
@@ -98,8 +98,8 @@ export default function GraphPage() {
         </div>
 
         {/* Right Drawer - Intelligence Panel */}
-        <div className="w-96 bg-[#111111] border-l border-[#2a2a2a] overflow-y-auto flex flex-col z-20 shadow-[-10px_0_30px_rgba(0,0,0,0.5)]">
-          <div className="p-5 border-b border-[#2a2a2a] bg-[#161616]">
+        <div className="w-full md:w-96 h-[45%] md:h-auto bg-[#111111] border-t md:border-t-0 md:border-l border-[#2a2a2a] overflow-y-auto flex flex-col z-20 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] md:shadow-[-10px_0_30px_rgba(0,0,0,0.5)] shrink-0">
+          <div className="p-3 md:p-5 border-b border-[#2a2a2a] bg-[#161616]">
             <h3 className="font-bold text-lg text-white flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-blue-500"></span>
               Intelligence Inspector

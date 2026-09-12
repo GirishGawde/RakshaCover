@@ -10,7 +10,29 @@ export default function ReportResultPage() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    generateReport({}).then(setReport).catch(console.error);
+    generateReport({}).then((res) => {
+      // Dynamic Mock Overwrite for Demo Purposes
+      const savedData = sessionStorage.getItem("raksha_intake");
+      if (savedData) {
+        const data = JSON.parse(savedData);
+        let dynamicText = `=================================================\nFORMAL COMPLAINT TO CYBER CRIME HELPLINE (1930)\n=================================================\n\nDate of Generation: ${new Date().toLocaleDateString()}\nVictim Name: [Your Name]\n\n`;
+        
+        if (data.fraudType === "UPI_FRAUD") {
+          dynamicText += `SUBJECT: Request for Immediate Account Freeze & Reversal of Fraudulent Transaction\n\nI wish to report a financial fraud transaction. I was deceived into transferring funds to a fraudulent UPI account.\n\nTRANSACTION DETAILS:\n--------------------\n• UTR Number      : ${data.utr || "N/A"}\n• Amount          : ₹${data.amount || "0"}\n• Receiving VPA   : ${data.receivingVpa || "N/A"}\n\n`;
+        } else if (data.fraudType === "JOB_FRAUD") {
+          dynamicText += `SUBJECT: Request for Action Against Fraudulent Job Offer Scheme\n\nI wish to report an online job/task fraud. I was recruited under false pretenses and coerced into making payments.\n\nINCIDENT DETAILS:\n-----------------\n• Platform Used   : ${data.platform || "N/A"}\n• Recruiter Contact: ${data.recruiterContact || "N/A"}\n• Proof of Payment: ${data.paymentProof || "Provided upon request"}\n\n`;
+        } else if (data.fraudType === "SEXTORTION") {
+          dynamicText += `SUBJECT: Confidential Report of Online Extortion & Coercion\n\nI wish to urgently report a case of online extortion. The perpetrator is threatening to release private media unless their demands are met.\n\nINCIDENT DETAILS:\n-----------------\n• Platform & Handle : ${data.platformHandle || "N/A"}\n• Encrypted Locker  : ${data.evidenceLocker || "Provided upon official request"}\n\n`;
+        } else if (data.fraudType === "DIGITAL_ARREST") {
+          dynamicText += `SUBJECT: Report of Impersonation of Law Enforcement (Digital Arrest Scam)\n\nI wish to report a severe impersonation scam where individuals posed as Police/CBI/Customs officials over a video call to extort funds through intimidation.\n\nINCIDENT DETAILS:\n-----------------\n• Note: Call disconnected safely. No funds were transferred.\n\n`;
+        }
+        
+        dynamicText += `RAKSHA-COVER INTELLIGENCE BRIEF:\n--------------------------------\n⚠️ HIGH SEVERITY ALERT\nThe provided entities have been flagged by the RakshaCover Intelligence Platform. They are positively linked to a known threat cluster, indicating professional organized activity.\n\nREQUESTED ACTION:\n-----------------\n1. Initiate immediate investigation and tracking of digital footprints.\n2. Register an FIR under relevant sections of the IT Act.\n\nThank you for your prompt action.\n\n[Your Signature]`;
+        
+        res.reportText = dynamicText;
+      }
+      setReport(res);
+    }).catch(console.error);
   }, []);
 
   const handleCopy = () => {
@@ -18,6 +40,10 @@ export default function ReportResultPage() {
     navigator.clipboard.writeText(report.reportText);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handlePrint = () => {
+    window.print();
   };
 
   if (!report) return (
@@ -59,12 +85,12 @@ export default function ReportResultPage() {
         </div>
       </div>
 
-      <div className="flex gap-4">
+      <div className="flex gap-4 print:hidden">
         <button onClick={handleCopy} className="btn-red flex-1 flex items-center justify-center gap-2 py-3">
           <Copy className="w-5 h-5" /> Copy Script for 1930 Call
         </button>
-        <button className="btn-ghost flex-1 flex items-center justify-center gap-2 py-3">
-          <Download className="w-5 h-5" /> Download NCRP PDF
+        <button onClick={handlePrint} className="btn-ghost flex-1 flex items-center justify-center gap-2 py-3">
+          <Download className="w-5 h-5" /> Download / Print PDF
         </button>
       </div>
     </div>

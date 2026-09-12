@@ -22,7 +22,7 @@ export function Navbar() {
   };
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-[#2a2a2a] bg-[#0d0d0d]/90 backdrop-blur-md">
+    <nav className="sticky top-0 z-50 border-b border-[#2a2a2a] bg-[#0d0d0d]/90 backdrop-blur-md print:hidden">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 group">

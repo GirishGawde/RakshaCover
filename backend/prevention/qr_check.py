@@ -7,7 +7,10 @@ Part of the algorithm specs (Rule 5).
 import io
 import base64
 from urllib.parse import urlparse, parse_qs
-from pyzbar.pyzbar import decode
+try:
+    from pyzbar.pyzbar import decode
+except ImportError:
+    decode = None
 from PIL import Image
 
 # A list of known valid PSP handles in India (mocked/subset for hackathon)
@@ -25,6 +28,9 @@ def decode_qr_image(image_base64: str) -> str:
             image_base64 = image_base64.split(",")[1]
         image_data = base64.b64decode(image_base64)
         image = Image.open(io.BytesIO(image_data))
+        if decode is None:
+            print("pyzbar is not installed or libzbar0 is missing")
+            return None
         decoded_objects = decode(image)
         if not decoded_objects:
             return None

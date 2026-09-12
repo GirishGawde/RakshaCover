@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS reports (
 
     exit_risk_flag    BOOLEAN     DEFAULT FALSE,
     da_alert          BOOLEAN     DEFAULT FALSE,
-    cluster_id        UUID,
+    cluster_id        VARCHAR(256),
     report_html       TEXT,
     status            VARCHAR(32) DEFAULT 'open'
 );
@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS reports (
 -- Realtime is enabled on this table (see Phase 2 of database.md).
 -- ─────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS clusters (
-  id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  id               VARCHAR(256) PRIMARY KEY,
   network_hash     TEXT UNIQUE NOT NULL,      -- Hash identifying this cluster pattern
   label            TEXT,                      -- Human-readable cluster label
   report_count     INTEGER DEFAULT 0,

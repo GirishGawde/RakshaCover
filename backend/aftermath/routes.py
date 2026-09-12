@@ -25,7 +25,7 @@ from digital_arrest_shield import check_digital_arrest
 from exit_risk import check_exit_risk
 from report_generator import generate_pdf_bytes, generate_report
 from urgency_score import compute_urgency
-from db import get_supabase
+from shared.db import get_supabase
 
 logger = logging.getLogger("aftermath")
 router = APIRouter()

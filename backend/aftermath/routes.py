@@ -22,6 +22,7 @@ from urgency_score import compute_urgency
 from digital_arrest_shield import check_digital_arrest
 from exit_risk import check_exit_risk
 from report_generator import generate_report, generate_pdf_bytes
+from db import get_supabase
 
 router = APIRouter()
 
@@ -129,15 +130,40 @@ def aftermath_intake(payload: IntakeRequest):
     #    BB1: in-memory store.
     #    BB2: replace with Supabase INSERT (see Step 2.4 in modc.md).
     case_id = str(uuid.uuid4())
-    _case_store[case_id] = {
-        **payload.dict(),
-        "urgency_score":   urgency["urgency_score"],
-        "urgency_label":   urgency["urgency_label"],   # Fix 1: stored, not recalculated
-        "exit_risk_flag":  exit_risk["flagged"],
-        "next_steps":      next_steps,                 # Fix 1: stored, not recalculated
-        # Fix 4: validated model dict — unknown keys are stripped
+    
+    # We create the case dictionary for both Supabase and our in-memory fallback
+    case_data = {
+        "id": case_id,
+        "fraud_type": payload.fraud_type.value,
+        "victim_name": payload.victim_name,
+        "victim_contact": payload.victim_contact,
+        "incident_ts": payload.incident_timestamp.isoformat(),
+        "amount_lost": payload.amount_lost,
+        "currency": payload.currency,
+        "receiving_upi_id": payload.receiving_upi_id,
+        "receiving_account": payload.receiving_account,
+        "evidence_text": payload.evidence_text,
         "evidence_fields": _validated_evidence.dict(exclude_none=True),
+        "urgency_score": urgency["urgency_score"],
+        "urgency_label": urgency["urgency_label"],
+        "next_steps": next_steps,
+        "exit_risk_flag": exit_risk["flagged"],
+        "da_alert": da_result["digital_arrest_alert"],
     }
+    
+    try:
+        get_supabase().table("reports").insert(case_data).execute()
+    except Exception as e:
+        print(f"Supabase INSERT failed, falling back to memory: {e}")
+        # Save exact shape required by report_generator as a fallback
+        _case_store[case_id] = {
+            **payload.dict(),
+            "urgency_score":   urgency["urgency_score"],
+            "urgency_label":   urgency["urgency_label"],
+            "exit_risk_flag":  exit_risk["flagged"],
+            "next_steps":      next_steps,
+            "evidence_fields": _validated_evidence.dict(exclude_none=True),
+        }
 
     return IntakeResponse(
         case_id=case_id,
@@ -160,7 +186,31 @@ def aftermath_intake(payload: IntakeRequest):
 def aftermath_report(payload: ReportRequest):
     # BB1 path: in-memory store.
     # BB2 path: replace with Supabase SELECT (see Step 2.4 in modc.md).
-    case = _case_store.get(payload.case_id)
+    case = None
+    try:
+        res = get_supabase().table("reports").select("*").eq("id", payload.case_id).single().execute()
+        db_case = res.data
+        
+        case = {
+            "fraud_type": db_case["fraud_type"],
+            "victim_name": db_case["victim_name"],
+            "victim_contact": db_case["victim_contact"],
+            "incident_timestamp": datetime.fromisoformat(db_case["incident_ts"]),
+            "amount_lost": db_case["amount_lost"],
+            "currency": db_case["currency"],
+            "receiving_upi_id": db_case["receiving_upi_id"],
+            "receiving_account": db_case["receiving_account"],
+            "evidence_text": db_case["evidence_text"],
+            "evidence_fields": db_case["evidence_fields"],
+            "urgency_score": db_case["urgency_score"],
+            "urgency_label": db_case["urgency_label"],
+            "exit_risk_flag": db_case["exit_risk_flag"],
+            "next_steps": db_case["next_steps"]
+        }
+    except Exception as e:
+        print(f"Supabase SELECT failed, falling back to memory: {e}")
+        case = _case_store.get(payload.case_id)
+        
     if not case:
         raise HTTPException(
             status_code=404,

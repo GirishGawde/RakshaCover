@@ -178,6 +178,8 @@ pip install -r requirements.txt
 uvicorn main:app --reload --port 8001
 ```
 
+> **Note:** Some components in Module A currently use stubbed or localized mock data for hackathon purposes. Specifically, `upi_lookup.py` will require future wiring to Module B (Cluster) and Module C (Aftermath) to validate UPIs against real cross-module database tables instead of mocked scenarios.
+
 ---
 
 ## Backend — Module B (Cluster)

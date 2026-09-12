@@ -12,21 +12,56 @@ from sklearn.linear_model import LogisticRegression
 DATASET_PATH = os.path.join(os.path.dirname(__file__), 'data', 'uci_phishing_dataset.csv')
 
 model = None
-feature_names = ['url_length', 'num_dots', 'has_at', 'ip_host']
+# We select a subset of UCI features that we can easily compute from a raw URL
+feature_names = [
+    'having_ip_address',
+    'url_length',
+    'having_at_symbol',
+    'prefix_suffix',
+    'having_sub_domain'
+]
 
 def extract_features(url: str) -> dict:
     parsed = urlparse(url if '://' in url else 'http://' + url)
     hostname = parsed.hostname or ''
     
-    # Check if hostname is an IP
+    # having_ip_address: -1 if IP, 1 otherwise
     ip_pattern = re.compile(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$')
-    is_ip = 1 if ip_pattern.match(hostname) else 0
+    having_ip_address = -1 if ip_pattern.match(hostname) else 1
     
+    # url_length: 1 if < 54, 0 if 54<=length<=75, -1 if >75
+    length = len(url)
+    if length < 54:
+        url_length = 1
+    elif length <= 75:
+        url_length = 0
+    else:
+        url_length = -1
+        
+    # having_at_symbol: -1 if @ present, 1 otherwise
+    having_at_symbol = -1 if '@' in url else 1
+    
+    # prefix_suffix: -1 if dash in hostname, 1 otherwise
+    prefix_suffix = -1 if '-' in hostname else 1
+    
+    # having_sub_domain: dots in domain
+    # e.g., www.google.com -> 2 dots, google.com -> 1 dot
+    # We ignore www. if present for counting subdomains roughly
+    clean_host = hostname.replace('www.', '')
+    dots = clean_host.count('.')
+    if dots == 1:
+        having_sub_domain = 1
+    elif dots == 2:
+        having_sub_domain = 0
+    else:
+        having_sub_domain = -1
+        
     return {
-        'url_length': len(url),
-        'num_dots': url.count('.'),
-        'has_at': 1 if '@' in url else 0,
-        'ip_host': is_ip
+        'having_ip_address': having_ip_address,
+        'url_length': url_length,
+        'having_at_symbol': having_at_symbol,
+        'prefix_suffix': prefix_suffix,
+        'having_sub_domain': having_sub_domain
     }
 
 def train_model():
@@ -37,21 +72,21 @@ def train_model():
         
     df = pd.read_csv(DATASET_PATH)
     
-    # Simple check to ensure we have the required columns
-    required_cols = set(feature_names + ['class'])
+    required_cols = set(feature_names + ['result'])
     if not required_cols.issubset(df.columns):
-        print("Warning: Dataset missing required columns.")
+        print(f"Warning: Dataset missing required columns. Available: {df.columns}")
         return
         
     X = df[feature_names]
-    y = df['class']
+    # UCI dataset result is 1 (legitimate) and -1 (phishing)
+    # We map phishing (-1) to 1, and legitimate (1) to 0 for LogisticRegression
+    y = df['result'].apply(lambda x: 1 if x == -1 else 0)
     
-    # Train Logistic Regression
     clf = LogisticRegression(random_state=42, max_iter=1000)
-    # Wrap in try/except in case of insufficient classes
     try:
         clf.fit(X, y)
         model = clf
+        print("ML classifier trained successfully.")
     except Exception as e:
         print(f"Warning: Model training failed. {e}")
 
@@ -61,24 +96,19 @@ def check_classifier(url: str) -> dict:
         
     features_dict = extract_features(url)
     
-    # Convert to DataFrame to avoid warnings about feature names
     import pandas as pd
     X_pred = pd.DataFrame([features_dict])
     
     proba = model.predict_proba(X_pred)[0]
-    # Class 1 is phishing
+    # Class 1 is phishing based on our mapping
     phish_prob = proba[1]
     
-    # Calculate feature contributions for explainability
-    # For logistic regression: contribution = feature_value * coefficient
     contributions = {}
     for i, feature in enumerate(feature_names):
         val = features_dict[feature]
         coef = model.coef_[0][i]
         contributions[feature] = val * coef
         
-    # Get top 2 features driving the prediction
-    # Sort by absolute contribution value, descending
     top_features = sorted(contributions.items(), key=lambda x: abs(x[1]), reverse=True)[:2]
     
     explain_str = ", ".join([f"{f}={features_dict[f]} (wt: {round(val, 2)})" for f, val in top_features])

@@ -16,7 +16,10 @@ from PIL import Image
 # A list of known valid PSP handles in India (mocked/subset for hackathon)
 VALID_PSP_HANDLES = {
     'okicici', 'okaxis', 'okhdfcbank', 'oksbi', 'paytm', 'ybl', 'ibl', 'axl', 
-    'apl', 'upi', 'sbi', 'icici'
+    'apl', 'upi', 'sbi', 'icici', 'hdfcbank', 'kotak', 'yesbank', 'freecharge',
+    'barodapay', 'bhim', 'dbs', 'idfcbank', 'postbank', 'indus', 'citi', 'hsbc',
+    'ikwik', 'allbank', 'aubank', 'bandhan', 'centralbank', 'canara', 'indianbank',
+    'iob', 'jio', 'kbl', 'federal', 'syndicate', 'unionbank', 'vijayabank'
 }
 
 def decode_qr_image(image_base64: str) -> str:

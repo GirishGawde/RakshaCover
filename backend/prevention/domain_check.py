@@ -66,4 +66,11 @@ def check_domain(url: str) -> dict:
     elif min_dist == 3:
         return {"flagged": True, "score": 33, "detail": f"Lookalike domain (dist 3 to {closest_domain})"}
     
+    # Substring fallback check for brand-stuffed domains
+    for domain in WHITELIST:
+        brand = domain.split('.')[0]
+        # Ignore very short brands to reduce false positives
+        if len(brand) > 2 and brand in hostname:
+            return {"flagged": True, "score": 80, "detail": f"Suspicious brand substring found: {brand} (targets {domain})"}
+            
     return {"flagged": False, "score": 0, "detail": "No lookalike found in whitelist"}

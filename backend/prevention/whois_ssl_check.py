@@ -72,5 +72,7 @@ def check_ssl(url: str) -> dict:
                 return {"flagged": False, "score": 0, "detail": "Valid SSL certificate"}
     except ssl.SSLCertVerificationError as e:
         return {"flagged": True, "score": 100, "detail": f"SSL verification failed: {str(e)} (Self-signed or mismatch)"}
+    except ssl.SSLError as e:
+        return {"flagged": True, "score": 100, "detail": f"SSL handshake failed: {str(e)}"}
     except Exception as e:
         return {"flagged": False, "score": 0, "detail": f"SSL check failed or timed out: {str(e)} (graceful fallback)"}

@@ -1,0 +1,9 @@
+fastapi>=0.111.0
+uvicorn[standard]>=0.29.0
+pydantic>=2.7.0
+supabase>=2.4.0
+python-dotenv>=1.0.1
+
+# Optional — only if PDF generation is added after Checkpoint 2:
+# weasyprint>=61.2
+# System deps for weasyprint (Ubuntu/Debian): apt-get install libpango-1.0-0 libpangoft2-1.0-0

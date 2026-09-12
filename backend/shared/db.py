@@ -21,7 +21,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 SUPABASE_URL: str = os.environ["SUPABASE_URL"]
-SUPABASE_SERVICE_ROLE_KEY: str = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
+SUPABASE_SERVICE_ROLE_KEY: str = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_ANON_KEY", "")
 
 # Singleton client
 _client: Client | None = None
@@ -36,6 +36,8 @@ def get_db() -> Client:
         _client = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
     return _client
 
+# Alias for backwards compatibility with aftermath branch
+get_supabase = get_db
 
 # ─── Convenience helpers ─────────────────────────────────────────────────────
 

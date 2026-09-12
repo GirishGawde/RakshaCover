@@ -1,5 +1,5 @@
 -- ═══════════════════════════════════════════════════════════════════════════
--- RakshaCover — Shared PostgreSQL Schema (Phase 0 Output)
+-- RakshaCover — Shared PostgreSQL Schema
 -- Module E: Database & Supabase Infrastructure
 --
 -- HOW TO USE:
@@ -14,16 +14,33 @@
 -- Stores individual fraud incident reports.
 -- ─────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS reports (
-  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  fraud_type      TEXT NOT NULL CHECK (fraud_type IN ('UPI_FRAUD','JOB_FRAUD','SEXTORTION','DIGITAL_ARREST','OTHER')),
-  upi_id          TEXT,                   -- Receiving VPA, if applicable
-  utr             TEXT,                   -- Transaction UTR number
-  amount          NUMERIC(12, 2),         -- Amount lost (INR)
-  description     TEXT,                   -- Free-text victim description
-  urgency_score   NUMERIC(4, 3),          -- 0.000–1.000 (Module C output)
-  exit_risk       BOOLEAN DEFAULT FALSE,  -- Exit-risk flag (Module C)
-  cluster_id      UUID,                   -- FK to clusters (populated by Module B)
-  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    id                UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    fraud_type        VARCHAR(32) NOT NULL,
+    victim_name       VARCHAR(256),
+    victim_contact    VARCHAR(128),
+    incident_ts       TIMESTAMPTZ NOT NULL,
+    ingested_ts       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    amount_lost       NUMERIC(14, 2),
+    currency          CHAR(3)     DEFAULT 'INR',
+
+    -- Fix 2: two columns, not one — no silent data loss
+    receiving_upi_id  VARCHAR(256),
+    receiving_account VARCHAR(256),
+
+    evidence_text     TEXT,
+    -- Fix 4: only schema-validated fields reach this column
+    evidence_fields   JSONB,
+
+    urgency_score     FLOAT,
+    -- Fix 1: label + steps stored at intake time
+    urgency_label     VARCHAR(16) DEFAULT 'LOW',
+    next_steps        JSONB,
+
+    exit_risk_flag    BOOLEAN     DEFAULT FALSE,
+    da_alert          BOOLEAN     DEFAULT FALSE,
+    cluster_id        VARCHAR(256),
+    report_html       TEXT,
+    status            VARCHAR(32) DEFAULT 'open'
 );
 
 -- ─────────────────────────────────────────────
@@ -32,7 +49,7 @@ CREATE TABLE IF NOT EXISTS reports (
 -- Realtime is enabled on this table (see Phase 2 of database.md).
 -- ─────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS clusters (
-  id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  id               VARCHAR(256) PRIMARY KEY,
   network_hash     TEXT UNIQUE NOT NULL,      -- Hash identifying this cluster pattern
   label            TEXT,                      -- Human-readable cluster label
   report_count     INTEGER DEFAULT 0,
@@ -127,7 +144,8 @@ CREATE POLICY "clusters__public_read"
 
 CREATE INDEX IF NOT EXISTS idx_reports_fraud_type  ON reports (fraud_type);
 CREATE INDEX IF NOT EXISTS idx_reports_cluster_id  ON reports (cluster_id);
-CREATE INDEX IF NOT EXISTS idx_reports_upi_id      ON reports (upi_id);
+CREATE INDEX IF NOT EXISTS idx_reports_ingested_ts ON reports (ingested_ts DESC);
+CREATE INDEX IF NOT EXISTS idx_reports_status      ON reports (status);
 CREATE INDEX IF NOT EXISTS idx_clusters_hash       ON clusters (network_hash);
 CREATE INDEX IF NOT EXISTS idx_whitelist_domain    ON domain_whitelist (domain_name);
 

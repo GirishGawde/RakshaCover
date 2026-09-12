@@ -1,0 +1,34 @@
+[
+  {
+    "report_id": "seed-upi-001",
+    "description": "KYC update account blocked click urgent link",
+    "payment_handle": "support@ybl",
+    "amount": 5000,
+    "channel_sequence": ["sms", "whatsapp", "upi"],
+    "fraud_type": "upi"
+  },
+  {
+    "report_id": "seed-upi-002",
+    "description": "urgent KYC verification account frozen link",
+    "payment_handle": "support@ybl",
+    "amount": 7500,
+    "channel_sequence": ["sms", "whatsapp", "upi"],
+    "fraud_type": "upi"
+  },
+  {
+    "report_id": "seed-job-001",
+    "description": "work from home job registration fee interview",
+    "payment_handle": "recruit@oksbi",
+    "amount": 1200,
+    "channel_sequence": ["telegram", "phone", "upi"],
+    "fraud_type": "job"
+  },
+  {
+    "report_id": "seed-arrest-001",
+    "description": "police customs case stay on video call transfer money",
+    "payment_handle": "legal@upi",
+    "amount": 100000,
+    "channel_sequence": ["phone", "video_call", "upi"],
+    "fraud_type": "digital_arrest"
+  }
+]

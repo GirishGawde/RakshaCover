@@ -1,0 +1,41 @@
+{
+  "checkLink": {
+    "score": 82,
+    "riskLabel": "SEVERE_THREAT",
+    "url": "http://paypa1-secure-login.net/verify",
+    "flags": {
+      "levenshteinLookalike": true,
+      "domainAgeDays": 4,
+      "sslValid": false,
+      "phishTankHit": true,
+      "urlhausHit": false
+    },
+    "recommendation": "Do not visit this link. It closely resembles a known phishing domain."
+  },
+  "checkQr": {
+    "score": 61,
+    "riskLabel": "SUSPICIOUS",
+    "decodedUrl": "upi://pay?pa=fraudster@ybl&pn=FakeShop&am=4999",
+    "vpa": "fraudster@ybl",
+    "flags": {
+      "vpaInReportsTable": true,
+      "linkedClusters": 3,
+      "levenshteinLookalike": false,
+      "sslValid": null,
+      "domainAgeDays": null,
+      "phishTankHit": false
+    },
+    "recommendation": "This UPI ID has appeared in 3 fraud cluster reports. Proceed with caution."
+  },
+  "checkUpi": {
+    "score": 45,
+    "riskLabel": "SUSPICIOUS",
+    "vpa": "seller9821@oksbi",
+    "flags": {
+      "vpaInReportsTable": true,
+      "linkedClusters": 1,
+      "reportCount": 2
+    },
+    "recommendation": "This VPA appears in existing fraud reports. Verify the recipient before sending."
+  }
+}

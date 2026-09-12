@@ -1,0 +1,33 @@
+{
+  "clusterId": "CLU-2026-0047",
+  "clusterLabel": "Fake Job Portal Scam — Pan-India Ring",
+  "reportCount": 14,
+  "nodes": [
+    { "id": "v1",  "label": "Victim #1 — Mumbai",    "type": "victim" },
+    { "id": "v2",  "label": "Victim #2 — Delhi",     "type": "victim" },
+    { "id": "v3",  "label": "Victim #3 — Pune",      "type": "victim" },
+    { "id": "v4",  "label": "Victim #4 — Bengaluru", "type": "victim" },
+    { "id": "v5",  "label": "Victim #5 — Hyderabad", "type": "victim" },
+    { "id": "v6",  "label": "Victim #6 — Chennai",   "type": "victim" },
+    { "id": "v7",  "label": "Victim #7 — Kolkata",   "type": "victim" },
+    { "id": "v8",  "label": "Victim #8 — Jaipur",    "type": "victim" },
+    { "id": "vpa1","label": "fraudster@ybl",          "type": "mule_vpa" },
+    { "id": "vpa2","label": "collect99@paytm",        "type": "mule_vpa" },
+    { "id": "msg1","label": "Script: 'Job offer ₹40k/month'", "type": "script_pattern" },
+    { "id": "msg2","label": "Script: 'Pay ₹500 registration'","type": "script_pattern" }
+  ],
+  "edges": [
+    { "source": "v1", "target": "vpa1", "weight": 0.95 },
+    { "source": "v2", "target": "vpa1", "weight": 0.91 },
+    { "source": "v3", "target": "vpa1", "weight": 0.88 },
+    { "source": "v4", "target": "vpa2", "weight": 0.76 },
+    { "source": "v5", "target": "vpa2", "weight": 0.82 },
+    { "source": "v6", "target": "vpa1", "weight": 0.73 },
+    { "source": "v7", "target": "vpa2", "weight": 0.69 },
+    { "source": "v8", "target": "vpa1", "weight": 0.91 },
+    { "source": "vpa1","target": "msg1","weight": 0.97 },
+    { "source": "vpa2","target": "msg1","weight": 0.84 },
+    { "source": "vpa1","target": "msg2","weight": 0.93 },
+    { "source": "vpa2","target": "msg2","weight": 0.79 }
+  ]
+}

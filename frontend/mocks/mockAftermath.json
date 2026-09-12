@@ -1,0 +1,35 @@
+{
+  "intake": {
+    "fraudType": "UPI_FRAUD",
+    "urgencyScore": 0.87,
+    "decayRate": 0.043,
+    "goldenHourDeadlineISO": "2026-09-11T21:45:00+05:30",
+    "exitRisk": true,
+    "exitRiskReason": "Payment gateway redirected to a crypto/forex conversion page.",
+    "digitalArrestFlag": false,
+    "nextStep": "REPORT",
+    "collectedFields": {
+      "utr": "425819273640",
+      "amount": 25000,
+      "receivingVpa": "fraudster@ybl",
+      "timestamp": "2026-09-11T20:10:00+05:30",
+      "bankName": "SBI"
+    }
+  },
+  "report": {
+    "reportId": "RC-2026-09-11-00142",
+    "generatedAt": "2026-09-11T20:35:00+05:30",
+    "fraudType": "UPI_FRAUD",
+    "urgencyScore": 0.87,
+    "exitRisk": true,
+    "reportText": "COMPLAINT TO CYBER CRIME HELPLINE 1930\n\nDate: 11 September 2026\nVictim: [Your Name]\n\nI wish to report a UPI fraud transaction made on 11/09/2026 at 20:10 IST.\n\nTransaction Details:\n- UTR Number   : 425819273640\n- Amount       : ₹25,000\n- Receiving VPA: fraudster@ybl\n- Bank         : SBI\n\nThe receiving VPA has been linked to 3 other fraud cluster reports in the RakshaCover system.\n\nRequested Action:\n1. Immediate freeze on the beneficiary account.\n2. Reversal of funds under RBI Circular on Unauthorised Electronic Fund Transfers.\n3. FIR registration under Section 66C / 66D IT Act.\n\nI am available for further verification at [Your Contact].",
+    "ncrpFormData": {
+      "incidentDate": "2026-09-11",
+      "amount": 25000,
+      "utr": "425819273640",
+      "receiverVpa": "fraudster@ybl",
+      "category": "Online Financial Fraud",
+      "subCategory": "UPI Fraud"
+    }
+  }
+}

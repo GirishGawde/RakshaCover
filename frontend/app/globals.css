@@ -1,0 +1,157 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+:root {
+  --bg-base:    #0d0d0d;
+  --bg-card:    #161616;
+  --bg-card-hover: #1e1e1e;
+  --border:     #2a2a2a;
+  --red:        #e63946;
+  --red-dark:   #c1121f;
+  --red-glow:   rgba(230, 57, 70, 0.15);
+  --text-primary:   #f5f5f5;
+  --text-secondary: #9ca3af;
+  --text-muted:     #6b7280;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  margin: 0;
+  padding: 0;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-base); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #3f3f3f; }
+
+/* Selection */
+::selection { background: var(--red-glow); color: var(--red); }
+
+@layer utilities {
+  .text-balance { text-wrap: balance; }
+
+  /* Glass card */
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+
+  .card-hover {
+    transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+  }
+  .card-hover:hover {
+    border-color: var(--red);
+    background: var(--bg-card-hover);
+    box-shadow: 0 0 24px var(--red-glow);
+  }
+
+  /* Red accent line */
+  .red-line {
+    border-left: 3px solid var(--red);
+  }
+
+  /* Glowing red button */
+  .btn-red {
+    background: var(--red);
+    color: white;
+    font-weight: 600;
+    padding: 0.6rem 1.5rem;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
+  }
+  .btn-red:hover {
+    background: var(--red-dark);
+    box-shadow: 0 0 20px var(--red-glow);
+    transform: translateY(-1px);
+  }
+  .btn-red:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  /* Ghost button */
+  .btn-ghost {
+    background: transparent;
+    color: var(--text-primary);
+    font-weight: 500;
+    padding: 0.6rem 1.5rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .btn-ghost:hover {
+    border-color: var(--red);
+    background: var(--red-glow);
+  }
+
+  /* Dark input */
+  .input-dark {
+    background: #111111;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-primary);
+    padding: 0.65rem 1rem;
+    width: 100%;
+    outline: none;
+    font-family: 'Inter', sans-serif;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .input-dark::placeholder { color: var(--text-muted); }
+  .input-dark:focus {
+    border-color: var(--red);
+    box-shadow: 0 0 0 3px var(--red-glow);
+  }
+
+  /* Tab active */
+  .tab-active {
+    background: var(--red) !important;
+    color: white !important;
+  }
+
+  /* Subtle grid background */
+  .grid-bg {
+    background-image:
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  /* Red pulse dot */
+  .pulse-red {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: var(--red);
+    border-radius: 50%;
+    animation: pulse-red 2s infinite;
+  }
+}
+
+@keyframes pulse-red {
+  0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 0 var(--red-glow); }
+  50% { opacity: 0.8; transform: scale(1.1); box-shadow: 0 0 0 6px rgba(230,57,70,0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in { animation: fade-in 0.4s ease both; }

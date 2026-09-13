@@ -12,26 +12,35 @@ DEFAULT_EDGE_THRESHOLD = 0.28
 def build_graph(clusters: list[Cluster], edge_threshold: float = DEFAULT_EDGE_THRESHOLD) -> GraphResponse:
     graph = nx.Graph()
     for cluster in clusters:
-        fraud_types = sorted({report.fraud_type for report in cluster.reports if report.fraud_type})
-        graph.add_node(
-            cluster.cluster_id,
-            label=f"Cluster {cluster.cluster_id.rsplit('-', 1)[-1]}",
-            report_count=len(cluster.reports),
-            confidence=cluster.confidence,
-            fraud_types=fraud_types,
-        )
-
-    for index, left in enumerate(clusters):
-        for right in clusters[index + 1 :]:
-            shared_signals = _shared_signals(left, right)
-            weight = len(shared_signals) / 3
-            if weight >= edge_threshold:
-                graph.add_edge(
-                    left.cluster_id,
-                    right.cluster_id,
-                    weight=round(weight, 3),
-                    shared_signals=shared_signals,
+        for report in cluster.reports:
+            victim_id = f"victim_{report.report_id}"
+            graph.add_node(
+                victim_id,
+                label=f"Victim: {report.report_id}",
+                type="victim"
+            )
+            
+            vpa_id = None
+            if report.payment_handle:
+                vpa_id = f"vpa_{report.payment_handle.lower()}"
+                graph.add_node(
+                    vpa_id,
+                    label=report.payment_handle,
+                    type="mule_vpa"
                 )
+                graph.add_edge(victim_id, vpa_id, weight=0.9, shared_signals=["payment_handle"])
+                
+            if report.fraud_type:
+                pattern_id = f"pattern_{report.fraud_type.lower()}"
+                graph.add_node(
+                    pattern_id,
+                    label=f"Pattern: {report.fraud_type}",
+                    type="script_pattern"
+                )
+                if vpa_id:
+                    graph.add_edge(vpa_id, pattern_id, weight=0.8, shared_signals=["fraud_type"])
+                else:
+                    graph.add_edge(victim_id, pattern_id, weight=0.8, shared_signals=["fraud_type"])
 
     return GraphResponse(
         nodes=[GraphNode(id=node, **data) for node, data in graph.nodes(data=True)],

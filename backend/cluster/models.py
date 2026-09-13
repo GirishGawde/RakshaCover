@@ -34,16 +34,17 @@ class MatchResponse(BaseModel):
 class GraphNode(BaseModel):
     id: str
     label: str
-    report_count: int
-    confidence: float
-    fraud_types: list[str]
+    type: str
+    report_count: int = 1
+    confidence: float = 1.0
+    fraud_types: list[str] = Field(default_factory=list)
 
 
 class GraphEdge(BaseModel):
     source: str
     target: str
     weight: float
-    shared_signals: list[str]
+    shared_signals: list[str] = Field(default_factory=list)
 
 
 class GraphResponse(BaseModel):

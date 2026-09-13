@@ -1,5 +1,5 @@
 export const DEFAULT_SETTINGS = {
-  apiBaseUrl: "http://localhost:8000",
+  apiBaseUrl: "https://rakshacover.onrender.com",
   automaticScans: true,
   showPageWarnings: true,
 };

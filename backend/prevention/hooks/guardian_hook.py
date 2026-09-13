@@ -21,7 +21,7 @@ def trigger_guardian_alert(parent_user_id: str, risk_type: str, risk_score: floa
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
         # Fire and forget to the Guardian API (timeout=2s so we don't hang)
-        res = requests.post("http://localhost:8000/guardian/alert", json=payload, timeout=2.0)
+        res = requests.post("https://rakshacover.onrender.com/guardian/alert", json=payload, timeout=2.0)
         if res.status_code == 200:
             logger.info(f"Guardian alert successfully dispatched from Prevention for user {parent_user_id}.")
     except Exception as e:
